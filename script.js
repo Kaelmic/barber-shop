@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
+  const navbar = document.querySelector(".navbar");
   const form = document.querySelector(".booking-form");
   const successMessage = document.getElementById("success-message");
 
@@ -8,271 +9,267 @@ document.addEventListener("DOMContentLoaded", () => {
   const dayDisplay = document.getElementById("day-display");
   const timeInput = document.getElementById("timeInput");
   const serviceSelect = document.getElementById("serviceSelect");
-  const submitBtn = form?.querySelector("button");
+  const submitBtn = form?.querySelector('button[type="submit"]');
 
-  const startHour = 9;
-  const endHour = 18;
-  const cutoffHour = 20;
-  const closedDays = [0]; // Sunday
-  const slotMinutes = ["00", "15", "30", "45"];
-
-  // Reveal animation
-  const revealElements = document.querySelectorAll(".reveal");
-
-  function revealOnScroll() {
-    revealElements.forEach((element) => {
-      const elementTop = element.getBoundingClientRect().top;
-      const windowHeight = window.innerHeight;
-
-      if (elementTop < windowHeight - 100) {
-        element.classList.add("active");
-      }
-    });
-  }
-
-  window.addEventListener("scroll", revealOnScroll);
-  window.addEventListener("load", revealOnScroll);
-  revealOnScroll();
-
-  // Parallax hero
-  const hero = document.querySelector(".hero");
-
-  if (hero) {
-    window.addEventListener("scroll", () => {
-      const scrollY = window.scrollY;
-      const speed = 0.25;
-
-      hero.style.setProperty("--parallax", `${scrollY * speed}px`);
-    });
-  }
-
-  if (!form || !successMessage || !dateInput || !timeInput) return;
+  const config = {
+    startHour: 9,
+    endHour: 18,
+    cutoffHour: 20,
+    closedDays: [0],
+    slotMinutes: ["00", "15", "30", "45"],
+  };
 
   function formatDate(date) {
-    const yyyy = date.getFullYear();
-    const mm = String(date.getMonth() + 1).padStart(2, "0");
-    const dd = String(date.getDate()).padStart(2, "0");
-
-    return `${yyyy}-${mm}-${dd}`;
-  }
-
-  function isPastCutoffTime() {
-    const now = new Date();
-    return now.getHours() >= cutoffHour;
+    return date.toISOString().split("T")[0];
   }
 
   function getMinimumBookingDate() {
-    const minDate = new Date();
+    const date = new Date();
 
-    if (isPastCutoffTime()) {
-      minDate.setDate(minDate.getDate() + 1);
+    if (date.getHours() >= config.cutoffHour) {
+      date.setDate(date.getDate() + 1);
     }
 
-    return formatDate(minDate);
-  }
-
-  function isClosedDay(dateValue) {
-    const selectedDate = new Date(`${dateValue}T00:00:00`);
-    return closedDays.includes(selectedDate.getDay());
+    return formatDate(date);
   }
 
   function getDayName(dateValue) {
-    const selectedDate = new Date(`${dateValue}T00:00:00`);
-
-    return selectedDate.toLocaleDateString("en-US", {
+    return new Date(`${dateValue}T00:00:00`).toLocaleDateString("en-US", {
       weekday: "long",
     });
   }
 
-  function setMinimumDate() {
-    dateInput.min = getMinimumBookingDate();
+  function isClosedDay(dateValue) {
+    return config.closedDays.includes(new Date(`${dateValue}T00:00:00`).getDay());
   }
 
   function resetTimeSlots(message = "Select time") {
+    if (!timeInput) return;
     timeInput.innerHTML = `<option value="">${message}</option>`;
+  }
+
+  function setMinimumDate() {
+    if (!dateInput) return;
+    dateInput.min = getMinimumBookingDate();
   }
 
   function generateTimeSlots() {
     resetTimeSlots();
 
-    if (!dateInput.value) return;
+    if (!dateInput?.value || !timeInput) return;
 
     const now = new Date();
-    const todayFormatted = formatDate(now);
-    const isToday = dateInput.value === todayFormatted;
+    const selectedDate = dateInput.value;
+    const isToday = selectedDate === formatDate(now);
 
-    if (dateInput.value < getMinimumBookingDate()) {
+    if (selectedDate < getMinimumBookingDate()) {
       resetTimeSlots("Choose a valid date first");
       return;
     }
 
-    if (isClosedDay(dateInput.value)) {
+    if (isClosedDay(selectedDate)) {
       resetTimeSlots("Closed on this day");
       return;
     }
 
     let availableSlots = 0;
 
-    for (let hour = startHour; hour <= endHour; hour++) {
-      slotMinutes.forEach((minute) => {
-        if (hour === endHour && minute !== "00") return;
+    for (let hour = config.startHour; hour <= config.endHour; hour++) {
+      config.slotMinutes.forEach((minute) => {
+        if (hour === config.endHour && minute !== "00") return;
 
         const time = `${String(hour).padStart(2, "0")}:${minute}`;
-        const slotDateTime = new Date(`${dateInput.value}T${time}:00`);
+        const slotDateTime = new Date(`${selectedDate}T${time}:00`);
 
         if (isToday && slotDateTime <= now) return;
 
         const option = document.createElement("option");
         option.value = time;
         option.textContent = time;
-
         timeInput.appendChild(option);
+
         availableSlots++;
       });
     }
 
-    if (availableSlots === 0) {
+    if (!availableSlots) {
       resetTimeSlots("No available times today");
     }
   }
 
-  function showDayMessage() {
-    if (!dayDisplay) return;
+  function updateDayMessage() {
+    if (!dayDisplay || !dateInput) return;
 
-    if (!dateInput.value) {
+    const selectedDate = dateInput.value;
+
+    if (!selectedDate) {
       dayDisplay.textContent = "";
       return;
     }
 
-    const minBookingDate = getMinimumBookingDate();
-
-    if (dateInput.value < minBookingDate) {
+    if (selectedDate < getMinimumBookingDate()) {
       dayDisplay.textContent = "Please choose a valid future date.";
       dateInput.value = "";
       resetTimeSlots();
       return;
     }
 
-    const dayName = getDayName(dateInput.value);
-
-    if (isClosedDay(dateInput.value)) {
-      dayDisplay.textContent = `Sorry, we are closed on ${dayName}. Please choose another date.`;
+    if (isClosedDay(selectedDate)) {
+      dayDisplay.textContent = `Sorry, we are closed on ${getDayName(selectedDate)}. Please choose another date.`;
       dateInput.value = "";
       resetTimeSlots();
       return;
     }
 
-    dayDisplay.textContent = `Selected day: ${dayName}`;
+    dayDisplay.textContent = `Selected day: ${getDayName(selectedDate)}`;
   }
 
-  setMinimumDate();
-  resetTimeSlots();
-
-  // Name validation
-  if (nameInput) {
-    nameInput.addEventListener("input", () => {
-      nameInput.value = nameInput.value.replace(/[^A-Za-z\s]/g, "");
-    });
-  }
-
-  // Phone validation
-  if (phoneInput) {
-    phoneInput.addEventListener("input", () => {
-      phoneInput.value = phoneInput.value.replace(/[^\d+\s]/g, "");
-    });
-  }
-
-  // Date change
-  dateInput.addEventListener("change", () => {
-    setMinimumDate();
-    showDayMessage();
-    generateTimeSlots();
-  });
-
-  // Form submit
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    successMessage.style.display = "none";
-    setMinimumDate();
-
+  function validateForm() {
     const name = nameInput?.value.trim();
     const phone = phoneInput?.value.trim();
-    const selectedDate = dateInput.value;
-    const selectedTime = timeInput.value;
+    const selectedDate = dateInput?.value;
+    const selectedTime = timeInput?.value;
 
     if (!name || !/^[A-Za-z\s]+$/.test(name)) {
       alert("Please enter a valid name using letters only.");
-      return;
+      return false;
     }
 
     if (!phone || !/^[\+0-9\s]+$/.test(phone)) {
       alert("Please enter a valid phone number.");
-      return;
+      return false;
     }
 
     if (!serviceSelect?.value) {
       alert("Please choose a service.");
-      return;
+      return false;
     }
 
     if (!selectedDate || selectedDate < getMinimumBookingDate()) {
       alert("Please choose a valid booking date.");
-      return;
+      return false;
     }
 
     if (isClosedDay(selectedDate)) {
       alert("Sorry, we are closed on Sundays.");
-      return;
+      return false;
     }
 
     if (!selectedTime) {
       alert("Please choose a valid booking time.");
-      return;
+      return false;
     }
 
     const selectedDateTime = new Date(`${selectedDate}T${selectedTime}:00`);
-    const now = new Date();
 
-    if (selectedDateTime <= now) {
+    if (selectedDateTime <= new Date()) {
       alert("Please choose a future time.");
       generateTimeSlots();
       timeInput.value = "";
-      return;
+      return false;
     }
 
-    const data = new FormData(form);
+    return true;
+  }
 
-    submitBtn.disabled = true;
-    submitBtn.textContent = "Sending...";
+  function initRevealAnimations() {
+    const revealElements = document.querySelectorAll(".reveal");
 
-    try {
-      const response = await fetch(form.action, {
-        method: "POST",
-        body: data,
-        headers: {
-          Accept: "application/json",
-        },
+    function revealOnScroll() {
+      revealElements.forEach((element) => {
+        const elementTop = element.getBoundingClientRect().top;
+
+        if (elementTop < window.innerHeight - 100) {
+          element.classList.add("active");
+        }
       });
+    }
 
-      if (response.ok) {
+    window.addEventListener("scroll", revealOnScroll);
+    window.addEventListener("load", revealOnScroll);
+    revealOnScroll();
+  }
+
+  function initNavbarScroll() {
+    if (!navbar) return;
+
+    function updateNavbar() {
+      navbar.classList.toggle("scrolled", window.scrollY > 60);
+    }
+
+    window.addEventListener("scroll", updateNavbar);
+    updateNavbar();
+  }
+
+  function initInputFilters() {
+    nameInput?.addEventListener("input", () => {
+      nameInput.value = nameInput.value.replace(/[^A-Za-z\s]/g, "");
+    });
+
+    phoneInput?.addEventListener("input", () => {
+      phoneInput.value = phoneInput.value.replace(/[^\d+\s]/g, "");
+    });
+  }
+
+  function initBookingForm() {
+    if (!form || !successMessage || !dateInput || !timeInput) return;
+
+    setMinimumDate();
+    resetTimeSlots();
+
+    dateInput.addEventListener("change", () => {
+      setMinimumDate();
+      updateDayMessage();
+      generateTimeSlots();
+    });
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      successMessage.style.display = "none";
+      setMinimumDate();
+
+      if (!validateForm()) return;
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Sending...";
+
+      try {
+        const response = await fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Form submission failed");
+        }
+
         form.reset();
         dayDisplay.textContent = "";
         resetTimeSlots();
         setMinimumDate();
 
         successMessage.style.display = "block";
-        successMessage.scrollIntoView({ behavior: "smooth", block: "center" });
-      } else {
+        successMessage.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      } catch (error) {
         alert("Something went wrong. Please try again.");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Submit Request";
       }
-    } catch (error) {
-      alert("Network error. Please check your connection.");
-    } finally {
-      submitBtn.disabled = false;
-      submitBtn.textContent = "Submit Request";
-    }
-  });
+    });
+  }
+
+  initNavbarScroll();
+  initRevealAnimations();
+  initInputFilters();
+  initBookingForm();
 });
 
 function scrollToBooking(serviceName) {
@@ -283,7 +280,8 @@ function scrollToBooking(serviceName) {
     serviceSelect.value = serviceName;
   }
 
-  if (bookingSection) {
-    bookingSection.scrollIntoView({ behavior: "smooth" });
-  }
+  bookingSection?.scrollIntoView({
+    behavior: "smooth",
+    block: "start",
+  });
 }
