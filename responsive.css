@@ -1,0 +1,120 @@
+@media (max-width: 980px) {
+  .hero {
+    display: block;
+  }
+
+  .hero-card {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    width: 100%;
+    margin-top: 44px;
+  }
+
+  .services-grid,
+  .info-grid,
+  .booking {
+    grid-template-columns: 1fr;
+  }
+
+  .booking-left {
+    position: static;
+  }
+
+  .craft-section {
+    grid-template-columns: 1fr;
+    gap: 40px;
+    padding: 90px 5%;
+  }
+
+  .craft-image img {
+    height: 420px;
+  }
+}
+
+@media (max-width: 780px) {
+  section {
+    padding: 82px 5%;
+  }
+
+  .navbar {
+    padding: 18px 5%;
+  }
+
+  .navbar.scrolled {
+    padding: 13px 5%;
+  }
+
+  .nav-links {
+    display: none;
+  }
+
+  .nav-btn {
+    padding: 10px 14px;
+    font-size: 12px;
+  }
+
+  .logo span {
+    font-size: 15px;
+  }
+
+  .hero {
+    min-height: 92vh;
+    padding: 140px 5% 70px;
+    background:
+      linear-gradient(
+        180deg,
+        rgba(5,5,5,.84),
+        rgba(5,5,5,.74),
+        rgba(5,5,5,.96)
+      ),
+      url("images/bg1.png");
+    background-size: cover;
+    background-position: 65% center;
+  }
+
+  .hero h1 {
+    font-size: clamp(48px, 16vw, 72px);
+  }
+
+  .hero-content > p:not(.brand) {
+    font-size: 15px;
+  }
+
+  .hero-stats {
+    gap: 22px;
+  }
+
+  .hero-card {
+    padding: 22px;
+  }
+
+  .services-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .service-card {
+    min-height: 230px;
+  }
+
+  .info-card,
+  .booking-card {
+    padding: 26px;
+  }
+
+  .craft-section {
+    padding: 82px 5%;
+  }
+
+  .craft-image img {
+    height: 360px;
+  }
+
+  .craft-stats {
+    gap: 28px;
+  }
+
+  .booking-form {
+    grid-template-columns: 1fr;
+  }
+}
